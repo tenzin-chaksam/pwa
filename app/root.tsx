@@ -1,6 +1,7 @@
 import {
   Links,
   Meta,
+  NavLink,
   Outlet,
   Scripts,
   ScrollRestoration,
@@ -32,7 +33,32 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Links />
       </head>
       <body>
-        {children}
+        <nav className="bg-white shadow p-4">
+          <div className="container mx-auto flex items-center justify-between">
+            <NavLink to="/" className="text-2xl font-bold black">
+              ZSD
+            </NavLink>
+            <div className="space-x-4">
+              <NavLink
+                to="/"
+                className={({ isActive }) =>
+                  isActive ? "text-indigo-600" : "text-gray-600"
+                }
+              >
+                Home
+              </NavLink>
+              <NavLink
+                to="/logs"
+                className={({ isActive }) =>
+                  isActive ? "text-indigo-600" : "text-gray-600"
+                }
+              >
+                Logs
+              </NavLink>
+            </div>
+          </div>
+        </nav>
+        <main>{children}</main>
         <ScrollRestoration />
         <Scripts />
       </body>
