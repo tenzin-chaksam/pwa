@@ -162,7 +162,7 @@ export default function Index() {
             <ul className="space-y-3">
               {logs.map((log: any) => (
                 <li
-                  key={log.id}
+                  key={log.pk + log.timestamp}
                   className="border-l-4 border-blue-500 bg-gray-50 p-4 rounded shadow-sm"
                 >
                   <span className="font-semibold text-gray-700">
