@@ -7,6 +7,7 @@ import { Form, useActionData, useLoaderData } from "@remix-run/react";
 import { docClient, TABLE_NAME } from "~/lib/dynamodb";
 import { PutCommand, QueryCommand, ScanCommand } from "@aws-sdk/lib-dynamodb";
 import { useEffect, useRef } from "react";
+import { registerServiceWorker } from "utils/registerServiceWorkers";
 
 // SERVER-SIDE: Fetch logs when page loads
 export async function loader({}: LoaderFunctionArgs) {
@@ -89,6 +90,9 @@ export async function action({ request }: ActionFunctionArgs) {
 
 // CLIENT-SIDE: Display form and logs
 export default function Index() {
+  useEffect(() => {
+    registerServiceWorker();
+  }, []);
   const { logs, success } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
   const formRef = useRef<HTMLFormElement>(null);
