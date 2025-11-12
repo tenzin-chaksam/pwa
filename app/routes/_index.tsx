@@ -8,6 +8,19 @@ import { docClient, TABLE_NAME } from "~/lib/dynamodb";
 import { PutCommand, QueryCommand, ScanCommand } from "@aws-sdk/lib-dynamodb";
 import { useEffect, useRef } from "react";
 import { registerServiceWorker } from "utils/registerServiceWorkers";
+import {
+  KmsKeyringNode,
+  buildClient,
+  CommitmentPolicy,
+} from "@aws-crypto/client-node";
+
+const { encrypt, decrypt } = buildClient(
+  CommitmentPolicy.REQUIRE_ENCRYPT_REQUIRE_DECRYPT
+);
+
+const keyring = new KmsKeyringNode({
+  generatorKeyId: process.env.KMS_KEY_ARN!, // store your KMS key ARN in env
+});
 
 // SERVER-SIDE: Fetch logs when page loads
 export async function loader({}: LoaderFunctionArgs) {
@@ -28,8 +41,22 @@ export async function loader({}: LoaderFunctionArgs) {
     const logs = (result.Items || []).sort(
       (a: any, b: any) => b.timestamp - a.timestamp
     );
+    const decryptedLogs = await Promise.all(
+      logs.map(async (log: any) => {
+        try {
+          const { plaintext } = await decrypt(
+            keyring,
+            Buffer.from(log.value, "base64")
+          );
+          return { ...log, value: plaintext.toString() };
+        } catch (e) {
+          console.error("Decryption failed:", e);
+          return { ...log, value: "[decryption error]" };
+        }
+      })
+    );
 
-    return json({ logs, success: true });
+    return json({ logs: decryptedLogs, success: true });
   } catch (error) {
     console.error("Error fetching logs:", error);
     return json({
@@ -53,9 +80,11 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   try {
+    const { result } = await encrypt(keyring, fieldValue);
+
     const item = {
       pk: "LOGS",
-      value: fieldValue,
+      value: result.toString("base64"), // store ciphertext as Base64
       timestamp: Date.now(),
       createdAt: new Date().toISOString(),
     };
